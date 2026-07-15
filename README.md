@@ -14,10 +14,21 @@ alembic revision --autogenerate -m "MESSAGE"
 1. Файл alembic.ini
 Добавьте директорию src в конфигурацию:
 
-ini
 ```bash
 script_location = %(here)s/src/migrations
 prepend_sys_path = . src
+```
+Раскомментируйте строки для формата имени миграции и офорлмению по pep8:
+```bash
+file_template = %%(year)d_%%(month).2d_%%(day).2d_%%(hour).2d%%(minute).2d-%%(rev)s_%%(slug)s
+hooks = black
+black.type = console_scripts
+black.entrypoint = black
+black.options = -l 88 REVISION_SCRIPT_FILENAME
+```
+Установите пакет black
+```bash
+pip install black
 ```
 2. Файл env.py (в папке migrations)
 Добавьте область видимости:
