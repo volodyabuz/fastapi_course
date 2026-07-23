@@ -17,17 +17,18 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 )
 async def get_hotels(
         pagination: PaginationDep,
-        id: int | None= Query(None, description="Айдишник"),
-        title: str | None = Query(None, description="Название отеля")
+        title: str | None = Query(None, description="Название отеля"),
+        location: str | None = Query(None, description="Адрес отеля")
 ):
 
     per_page = pagination.per_page or 5
     async with async_session_maker() as session:
         query = select(HotelsOrm)
-        if id:
-            query = query.filter_by(id=id) # добавление ОПЦИОНАЛЬНОГО параметра
         if title:
-            query = query.filter_by(title=title)
+            # query = query.filter_by(title=title) # добавление ОПЦИОНАЛЬНОГО параметра
+            query = query.where(HotelsOrm.title.like(f"%{title}%"))
+        if location:
+            query = query.where(HotelsOrm.location.like(f"%{location}%"))
         query = (
             query
             .limit(per_page)
@@ -55,8 +56,8 @@ def delete_hotel(hotel_id: int):
     description="Добавляем данные об отеле: <b>title</b> и <b>name</b> обязательны!"
 )
 async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
-    "1": {"summary": "Сочи", "value": {"title": "Отель Сочи 5 звезд у моря", "location": "ул. Моря, 1"}},
-    "2": {"summary": "Дубай", "value": {"title": "Отель Дубай у фонтана", "location": "ул. Шейха, 2"}}
+    "1": {"summary": "Сочи", "value": {"title": "Отель Rich 5 звезд у моря", "location": "Сочи, ул. Моря, 1"}},
+    "2": {"summary": "Дубай", "value": {"title": "Отель Deluxe у фонтана", "location": "Дубай, ул. Шейха, 2"}}
 }
 )):
     async with async_session_maker() as session:
