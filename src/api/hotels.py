@@ -20,17 +20,19 @@ async def get_hotels(
         id: int | None= Query(None, description="Айдишник"),
         title: str | None = Query(None, description="Название отеля")
 ):
-    # hotels_ = []
-    # for hotel in hotels[(pagination.page-1) * pagination.per_page
-    # :pagination.per_page + (pagination.page-1) * pagination.per_page]:
-    #     if id and hotel["id"] != id:
-    #         continue
-    #     if title and hotel["title"] != title:
-    #         continue
-    #     hotels_.append(hotel)
 
+    per_page = pagination.per_page or 5
     async with async_session_maker() as session:
         query = select(HotelsOrm)
+        if id:
+            query = query.filter_by(id=id) # добавление ОПЦИОНАЛЬНОГО параметра
+        if title:
+            query = query.filter_by(title=title)
+        query = (
+            query
+            .limit(per_page)
+            .offset(per_page * (pagination.page - 1))
+        )
         result = await session.execute(query)
         hotels = result.scalars().all() # scalars - вытащить объект из кортежа
         # first_hotel = result.first() # первое значение
