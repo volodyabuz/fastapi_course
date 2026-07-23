@@ -4,7 +4,7 @@ from sqlalchemy.orm import DeclarativeBase
 from src.config import settings
 
 
-engine = create_async_engine(settings.DB_URL, echo=True) # param: echo - выводить SQL запрос в консоль
+engine = create_async_engine(settings.DB_URL) # param: echo=True - выводить SQL запрос в консоль
 
 async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
