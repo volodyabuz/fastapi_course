@@ -1,5 +1,5 @@
 from fastapi import Query, APIRouter, Body
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 
 from src.api.dependencies import PaginationDep
 from src.database import async_session_maker, engine
@@ -9,37 +9,33 @@ from src.schemas.hotels import Hotel, HotelPATCH
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
-hotels = [
-    {"id": 1, "title": "Sochi", "name": "sochi"},
-    {"id": 2, "title": "Дубай", "name": "dubai"},
-    {"id": 3, "title": "Мальдивы", "name": "maldivi"},
-    {"id": 4, "title": "Геленджик", "name": "gelendzhik"},
-    {"id": 5, "title": "Москва", "name": "moscow"},
-    {"id": 6, "title": "Казань", "name": "kazan"},
-    {"id": 7, "title": "Санкт-Петербург", "name": "spb"},
-]
-
 
 @router.get(
     "",
     summary="Получение данных об отеле",
     description="Можно указать <b>id</b> или <b>title</b> для фильтрации"
 )
-def get_hotels(
+async def get_hotels(
         pagination: PaginationDep,
         id: int | None= Query(None, description="Айдишник"),
         title: str | None = Query(None, description="Название отеля")
 ):
-    hotels_ = []
-    for hotel in hotels[(pagination.page-1) * pagination.per_page
-    :pagination.per_page + (pagination.page-1) * pagination.per_page]:
-        if id and hotel["id"] != id:
-            continue
-        if title and hotel["title"] != title:
-            continue
-        hotels_.append(hotel)
+    # hotels_ = []
+    # for hotel in hotels[(pagination.page-1) * pagination.per_page
+    # :pagination.per_page + (pagination.page-1) * pagination.per_page]:
+    #     if id and hotel["id"] != id:
+    #         continue
+    #     if title and hotel["title"] != title:
+    #         continue
+    #     hotels_.append(hotel)
 
-    return hotels_
+    async with async_session_maker() as session:
+        query = select(HotelsOrm)
+        result = await session.execute(query)
+        hotels = result.scalars().all() # scalars - вытащить объект из кортежа
+        # first_hotel = result.first() # первое значение
+        # result.one_or_none() # вернуть одно значение или ничего. А если значений больше - ошибка
+    return hotels
 
 @router.delete(
     "/{hotel_id}",
