@@ -1,9 +1,10 @@
 from fastapi import Query, APIRouter, Body
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, func
 
 from src.api.dependencies import PaginationDep
 from src.database import async_session_maker, engine
 from src.models.hotels import HotelsOrm
+from src.repositories.hotels import HotelsRepository
 from src.schemas.hotels import Hotel, HotelPATCH
 
 
@@ -20,25 +21,28 @@ async def get_hotels(
         title: str | None = Query(None, description="Название отеля"),
         location: str | None = Query(None, description="Адрес отеля")
 ):
-
-    per_page = pagination.per_page or 5
     async with async_session_maker() as session:
-        query = select(HotelsOrm)
-        if title:
-            # query = query.filter_by(title=title) # добавление ОПЦИОНАЛЬНОГО параметра
-            query = query.where(HotelsOrm.title.like(f"%{title}%"))
-        if location:
-            query = query.where(HotelsOrm.location.like(f"%{location}%"))
-        query = (
-            query
-            .limit(per_page)
-            .offset(per_page * (pagination.page - 1))
-        )
-        result = await session.execute(query)
-        hotels = result.scalars().all() # scalars - вытащить объект из кортежа
-        # first_hotel = result.first() # первое значение
-        # result.one_or_none() # вернуть одно значение или ничего. А если значений больше - ошибка
-    return hotels
+        return await HotelsRepository(session).get_all()
+    # per_page = pagination.per_page or 5
+    # async with async_session_maker() as session:
+    #     query = select(HotelsOrm)
+    #     if title:
+    #         # query = query.filter_by(title=title) # добавление ОПЦИОНАЛЬНОГО параметра
+    #         # query = query.where(HotelsOrm.title.like(f"%{title}%"))
+    #         # query = query.filter(func.lower(HotelsOrm.title).like(f"%{title.strip().lower()}%"))
+    #         query = query.filter(func.lower(HotelsOrm.title).contains(title.strip().lower())) # конструкция like %<text>%
+    #     if location:
+    #         query = query.where(func.lower(HotelsOrm.location).contains(location.strip().lower()))
+    #     query = (
+    #         query
+    #         .limit(per_page)
+    #         .offset(per_page * (pagination.page - 1))
+    #     )
+    #     result = await session.execute(query)
+    #     hotels = result.scalars().all() # scalars - вытащить объект из кортежа
+    #     # first_hotel = result.first() # первое значение
+    #     # result.one_or_none() # вернуть одно значение или ничего. А если значений больше - ошибка
+    # return hotels
 
 @router.delete(
     "/{hotel_id}",
