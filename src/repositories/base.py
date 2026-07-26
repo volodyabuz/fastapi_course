@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import insert, select
 
 
 class BaseRepository:
@@ -6,7 +6,7 @@ class BaseRepository:
     def __init__(self, session):
         self.session = session
 
-    async def get_all(self):
+    async def get_all(self, *args, **kwargs):
         query = select(self.model)
         result = await self.session.execute(query)
 
@@ -17,3 +17,8 @@ class BaseRepository:
         result = await self.session.execute(query)
 
         return result.scalars().one_or_none()
+
+    async def add(self, **model_data):
+        add_stmt = insert(self.model).values(**model_data).returning(self.model)
+        result = await self.session.execute(add_stmt)
+        return result.scalar_one()

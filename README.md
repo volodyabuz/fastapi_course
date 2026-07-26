@@ -123,3 +123,36 @@ sys.path.append(str(Path(__file__).parent.parent))
 Переменные окружения: Все настройки хранятся в файле .env, который не должен попадать в репозиторий.
 
 Пути импорта: Убедитесь, что пути к модулям настроены корректно для избежания ошибок импорта.
+
+Команды ORM
+
+Работа с сессией:
+```bash
+async with async_session_maker() as session:
+    <your code> (query or stmt)
+    await session.execute(query) # выполнить запрос в БД
+    result.scalars().all() # scalars - вытащить объект из кортежа
+    result.first() # первое значение
+    result.one_or_none() # вернуть одно значение или ничего. А если значений больше - ошибка
+    await session.commit() # закоммитить сессию (при select не нужно)
+```
+
+Выборка данных
+```bash
+query = select(HotelsOrm) # получить данные из модели
+# добавить фильтры:
+query = query.filter_by(title=title) # добавление ОПЦИОНАЛЬНОГО параметра
+query = query.where(HotelsOrm.title.like(f"%{title}%"))
+query = query.filter(func.lower(HotelsOrm.title).like(f"%{title.strip().lower()}%"))
+query = query.filter(func.lower(HotelsOrm.title).contains(title.strip().lower())) # конструкция like %<text>%
+query = (
+             query
+             .limit(limit)
+             .offset(offset)
+         )
+```
+
+Добавление данных
+```bash
+add_hotel_stmt = insert(HotelsOrm).values(**hotel_data.model_dump()) # вместо **args можно именованные параметры
+```
