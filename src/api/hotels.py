@@ -1,4 +1,5 @@
 from fastapi import Query, APIRouter, Body
+from fastapi.exceptions import HTTPException
 from sqlalchemy import insert, select, func
 
 from src.api.dependencies import PaginationDep
@@ -56,11 +57,15 @@ async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
     summary="Полное обновление данных об отеле",
     description="Обновляем данные об отеле: <b>title</b> и <b>name</b> обязательны!"
 )
-def full_update_hotel(hotel_id: int, hotel_data: Hotel):
-    global hotels
-    hotels[hotel_id - 1]["title"] = hotel_data.title
-    hotels[hotel_id - 1]["name"] = hotel_data.name
-    return {"status": "OK", "id": hotel_id}
+async def full_update_hotel(hotel_id: int, hotel_data: Hotel):
+    async with async_session_maker() as session:
+        get_this_hotel = await HotelsRepository(session).get_one_or_none(id=hotel_id)
+        if get_this_hotel:
+            await HotelsRepository(session).edit(hotel_data, id=hotel_id)
+            await session.commit()
+        else:
+            raise HTTPException(status_code=404, detail="Not Found")
+    return {"status": "OK"}
 
 @router.patch(
     "/{hotel_id}",
@@ -84,7 +89,12 @@ def partial_update_hotel(
     summary="Удаление отеля",
     description="Удалится отель с указанным <i>hotel_id</i>"
 )
-def delete_hotel(hotel_id: int):
-    global hotels
-    hotels = [hotel for hotel in hotels if hotel["id"] != hotel_id]
+async def delete_hotel(hotel_id: int):
+    async with async_session_maker() as session:
+        get_this_hotel = await HotelsRepository(session).get_one_or_none(id=hotel_id)
+        if get_this_hotel:
+            await HotelsRepository(session).delete(id=hotel_id)
+            await session.commit()
+        else:
+            raise HTTPException(status_code=404, detail="Not Found")
     return {"status": "OK"}
