@@ -156,3 +156,27 @@ query = (
 ```bash
 add_hotel_stmt = insert(HotelsOrm).values(**hotel_data.model_dump()) # вместо **args можно именованные параметры
 ```
+
+Работа с DataMapper - необходимо для отделения данных от БД, и работать с данными Pydantic, непривязанным к БД, а только
+бизнес-сущности.
+
+Вместо:
+```bash
+return result.scalars().all()  # scalars - вытащить объект из кортежа
+```
+Теперь:
+```bash
+return [self.schema.model_validate(model) for model in result.scalars().all()]
+```
+Примечание. Для корректной валидации, необходимо данные из классов моделей преобразовать в словарь, чтобы
+Pydantic нормально с ними работал. Нужно в метод model_validate добавить аттрибут:
+from_attributes=True
+
+Или сразу указать его в схемах:
+```bash
+class Hotel(HotelAdd):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+    # from_attributes - вытащить атрибуты и преобразовать в словарь
+```
