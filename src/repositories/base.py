@@ -1,29 +1,39 @@
 from sqlalchemy import insert, select, update, delete
 from pydantic import BaseModel
 
+from src.schemas.hotels import Hotel
+
 
 class BaseRepository:
     model = None
+    schema: BaseModel = None
+
     def __init__(self, session):
         self.session = session
 
     async def get_all(self, *args, **kwargs):
         query = select(self.model)
         result = await self.session.execute(query)
+        return [self.schema.model_validate(model) for model in result.scalars().all()]
+        # model_validate - преобразовать в Pydantic-модель
 
-        return result.scalars().all()  # scalars - вытащить объект из кортежа
+        # return result.scalars().all()  # scalars - вытащить объект из кортежа
 
     async def get_one_or_none(self, **filters_by):
         query = select(self.model).filter_by(**filters_by)
         result = await self.session.execute(query)
 
-        return result.scalars().one_or_none()
+        model = result.scalars().one_or_none()
+        if model is None:
+            return None
+        return self.schema.model_validate(model)
 
     async def add(self, data: BaseModel):
         add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         result = await self.session.execute(add_stmt)
 
-        return result.scalar_one()
+        model = result.scalar_one()
+        return self.schema.model_validate(model)
 
     async def edit(self, data: BaseModel, exclude_unset: bool = False, **filters_by) -> None:
         edit_stmt = (

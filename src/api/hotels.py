@@ -4,8 +4,7 @@ from fastapi.exceptions import HTTPException
 from src.api.dependencies import PaginationDep
 from src.database import async_session_maker
 from src.repositories.hotels import HotelsRepository
-from src.schemas.hotels import Hotel, HotelPATCH
-
+from src.schemas.hotels import Hotel, HotelPATCH, HotelAdd
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -44,7 +43,7 @@ async def get_hotel(hotel_id: int):
     summary="Добавление отеля",
     description="Добавляем данные об отеле: <b>title</b> и <b>name</b> обязательны!"
 )
-async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
+async def create_hotel(hotel_data: HotelAdd = Body(openapi_examples={
     "1": {"summary": "Сочи", "value": {"title": "Отель Rich 5 звезд у моря", "location": "Сочи, ул. Моря, 1"}},
     "2": {"summary": "Дубай", "value": {"title": "Отель Deluxe у фонтана", "location": "Дубай, ул. Шейха, 2"}}
 }
@@ -64,7 +63,7 @@ async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
     summary="Полное обновление данных об отеле",
     description="Обновляем данные об отеле: <b>title</b> и <b>name</b> обязательны!"
 )
-async def full_update_hotel(hotel_id: int, hotel_data: Hotel):
+async def full_update_hotel(hotel_id: int, hotel_data: HotelAdd):
     async with async_session_maker() as session:
         get_this_hotel = await HotelsRepository(session).get_one_or_none(id=hotel_id)
         if get_this_hotel:
