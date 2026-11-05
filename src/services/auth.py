@@ -17,6 +17,11 @@ class AuthService:
         encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)  # создаем jwt-токен
         return encoded_jwt
 
+    @staticmethod
+    def decode_token(token: str) -> dict:
+        # Декодирует JWT-токен в словарь с данными
+        return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+
     def verify_password(self, plain_password, hashed_password):
         # Проверяет пароль сырой и хэшированный на соответствие
         return self.pwd_context.verify(plain_password, hashed_password)

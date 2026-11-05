@@ -41,5 +41,7 @@ async def login_user(
 @router.get("/only_auth")
 async def only_auth(request: Request):
     token = request.cookies.get("access_token") or None
-    print(request.cookies, type(request.cookies))
-    return {"token": token}
+    data = AuthService().decode_token(token=token)
+    user_id = int(data["user_id"])
+    async with async_session_maker() as session:
+        return await UsersRepository(session).get_one_or_none(id=user_id)
